@@ -286,10 +286,15 @@ function iws_admin_menu() {
 add_action('admin_menu', 'iws_admin_menu');
 
 
-
 function iws_display_questions_in_admin() {
     $data = get_option('question_answers', []); 
-    
+    if (isset($_POST['delete_question']) && check_admin_referer('iws_delete_question_nonce')) {
+        $question_to_delete = sanitize_text_field($_POST['delete_question']);
+        if (array_key_exists($question_to_delete, $data)) {
+            unset($data[$question_to_delete]); 
+            update_option('question_answers', $data);
+        }
+    }
     ?>
     <div class="widefat">
         <h1>Question and Answer Results</h1>
@@ -299,6 +304,7 @@ function iws_display_questions_in_admin() {
                     <tr>
                         <th>Question</th>
                         <th>Selected Answer</th>
+                        <th>Delete</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -306,6 +312,13 @@ function iws_display_questions_in_admin() {
                         <tr>
                             <td><?php echo esc_html($question); ?></td>
                             <td><?php echo esc_html($answer); ?></td>
+                            <td>
+                                <form method="post">
+                                    <?php wp_nonce_field('iws_delete_question_nonce'); ?>
+                                    <input type="hidden" name="delete_question" value="<?php echo esc_attr($question); ?>" />
+                                    <input type="submit" value="Delete" class="button button-danger" />
+                                </form>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
