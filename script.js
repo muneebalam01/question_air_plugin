@@ -1,5 +1,31 @@
+
+
+let questionCount = 0;
 function showAnswer(event, optionId) {
     event.preventDefault();
+    questionCount++;
+
+   
+    if (optionId === 'NE') {
+        const allQuestions = document.querySelectorAll('.question');
+        allQuestions.forEach(q => q.classList.remove('visible'));
+
+        // Show not-eligible message
+        document.getElementById('not-eligible-message').style.display = 'block';
+
+        console.log('Not eligible. optionId:', optionId); // Debugging
+        return; // Stop the process here since user is not eligible
+    }
+
+
+    if (questionCount >= 7) {
+        document.querySelectorAll('.question').forEach(question => {
+            question.style.display = 'none'; // Hide all questions
+        });
+        // Display the thank you message
+        document.getElementById('thank-you-message').style.display = 'block';
+       // return; // Exit the function
+    }
 
     const buttons = document.querySelectorAll('.radio-button');
     buttons.forEach(btn => {

@@ -2,12 +2,11 @@
 /*
 Plugin Name: IWS Question Answer (TSP)
 Plugin URI: https://techsolutionspro.co.uk/
-Description:  IWS Question Answer Plugin developed by TSP.
+Description:  IWS Question Answer Plugin developed by TSP shortcode is iws_display_questions.
 Version: 1.2
 Author: Tech Solution Pro
 Author URI: https://techsolutionspro.co.uk/
 */
-
 
 function iws_enqueue_scripts() {
     wp_enqueue_style('uk-trivia-game-style', plugin_dir_url(__FILE__) . 'style.css');
@@ -15,8 +14,6 @@ function iws_enqueue_scripts() {
     wp_localize_script('uk-trivia-game-script', 'ajaxurl', admin_url('admin-ajax.php'));
 }
 add_action('wp_enqueue_scripts', 'iws_enqueue_scripts');
-
-
 function iws_add_question_airs_menu() {
     
     add_menu_page(
@@ -35,7 +32,7 @@ function iws_add_question_airs_menu() {
         'Answers',       
         'manage_options', 
         'question-airs-answers', 
-        'iws_answers_page_callback' 
+        'iws_display_questions_in_admin' 
     );
 }
 add_action('admin_menu', 'iws_add_question_airs_menu');
@@ -54,20 +51,7 @@ function iws_question_airs_page_callback() {
     </div>
     <?php
 }
-function iws_answers_page_callback() {
-    ?>
-    <div class="wrap">
-        <h1>Answers</h1>
-        <form method="post" action="options.php">
-            <?php
-            settings_fields('iws_answers_group');
-            do_settings_sections('question-airs-answers');
-            submit_button();
-            ?>
-        </form>
-    </div>
-    <?php
-}
+
 function iws_register_question_airs_settings() {
     register_setting('iws_question_airs_group', 'iws_question_airs');
     
@@ -88,6 +72,7 @@ function iws_register_question_airs_settings() {
 add_action('admin_init', 'iws_register_question_airs_settings');
 function iws_question_airs_field_callback() {
     $questions = get_option('iws_question_airs', array());
+    $dropdown_options = array(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 'NE');
     ?>
     <div id="iws-repeater">
         <?php if (!empty($questions)) : ?>
@@ -98,18 +83,48 @@ function iws_question_airs_field_callback() {
                         <button type="button" class="remove-question">Remove</button>
                     </div>
                     <div class="options-container">
-                    <div class="option_flex_cls">
-                         <input type="text" name="iws_question_airs[<?php echo $index; ?>][option1]" value="<?php echo esc_attr($question['option1']); ?>" placeholder="Option 1" />
-                        <input type="text" name="iws_question_airs[<?php echo $index; ?>][option1_id]" value="<?php echo esc_attr($question['option1_id']); ?>" placeholder="Option 1 ID" class ="next_question_id"/>
-                    </div>
-                    <div class="option_flex_cls">
+                        <div class="option_flex_cls">
+                        <input type="text" name="iws_question_airs[<?php echo $index; ?>][option1]" value="<?php echo esc_attr($question['option1']); ?>" placeholder="Option 1" />
+                            <select name="iws_question_airs[<?php echo $index; ?>][option1_id]" class="next_question_id">
+                                <option value="">Select Next Question</option>
+                                <?php foreach ($questions as $key => $q) : ?>
+                                    <?php if ($key !== $index) : // Skip current question ?>
+                                    <option value="<?php echo $key + 1; ?>" <?php selected($question['option1_id'], $key); ?>>
+                                        <?php echo esc_html($q['question']); // Display the question title ?>
+                                    </option>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                                <option value="NE" <?php selected($question['option1_id'], 'NE'); ?>>Not Eligible</option>
+                            </select>
+                        </div>
+                        <div class="option_flex_cls">
                         <input type="text" name="iws_question_airs[<?php echo $index; ?>][option2]" value="<?php echo esc_attr($question['option2']); ?>" placeholder="Option 2" />
-                        <input type="text" name="iws_question_airs[<?php echo $index; ?>][option2_id]" value="<?php echo esc_attr($question['option2_id']); ?>" placeholder="Option 2 ID" class ="next_question_id" />
-                    </div>
-                    <div class="option_flex_cls">
+                            <select name="iws_question_airs[<?php echo $index; ?>][option2_id]" class="next_question_id">
+                                <option value="">Select Next Question</option>
+                                <?php foreach ($questions as $key => $q) : ?>
+                                    <?php if ($key !== $index) : // Skip current question ?>
+                                    <option value="<?php echo $key; ?>" <?php selected($question['option2_id'], $key); ?>>
+                                        <?php echo esc_html($q['question']); // Display the question title ?>
+                                    </option>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                                <option value="NE" <?php selected($question['option2_id'], 'NE'); ?>>Not Eligible</option>
+                            </select>
+                        </div>
+                        <div class="option_flex_cls">
                         <input type="text" name="iws_question_airs[<?php echo $index; ?>][option3]" value="<?php echo esc_attr($question['option3']); ?>" placeholder="Option 3" />
-                        <input type="text" name="iws_question_airs[<?php echo $index; ?>][option3_id]" value="<?php echo esc_attr($question['option3_id']); ?>" placeholder="Option 3 ID"  class ="next_question_id"/>
-                    </div>
+                            <select name="iws_question_airs[<?php echo $index; ?>][option3_id]" class="next_question_id">
+                                <option value="">Select Next Question</option>
+                                <?php foreach ($questions as $key => $q) : ?>
+                                    <?php if ($key !== $index) : // Skip current question ?>
+                                    <option value="<?php echo $key; ?>" <?php selected($question['option3_id'], $key); ?>>
+                                        <?php echo esc_html($q['question']); // Display the question title ?>
+                                    </option>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                                <option value="NE" <?php selected($question['option3_id'], 'NE'); ?>>Not Eligible</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -130,23 +145,33 @@ function iws_question_airs_field_callback() {
                         <button type="button" class="remove-question">Remove</button>
                     </div>
                     <div class="options-container">
-                        <div class = "option_1">
-                        <input type="text" name="iws_question_airs[${newIndex}][option1]" placeholder="Option 1" />
-                        <input type="text" name="iws_question_airs[${newIndex}][option1_id]" placeholder="Next Id" class ="next_question_id" />
-                         </div>
-                       <div class = "option_1"> 
-                       <input type="text" name="iws_question_airs[${newIndex}][option2]" placeholder="Option 2" />
-                        <input type="text" name="iws_question_airs[${newIndex}][option2_id]" placeholder="Next Id" class ="next_question_id" />
+                        <div class="option_flex_cls">
+                            <select name="iws_question_airs[${newIndex}][option1]">
+                                <option value="">Select Next Question</option>
+                                ${[...Array(newIndex)].map((_, i) => `<option value="${i}">Question ${i + 1}</option>`).join('')}
+                                <option value="NE">Not Eligible</option>
+                            </select>
                         </div>
-                        <div class = "option_1">
-                        <input type="text" name="iws_question_airs[${newIndex}][option3]" placeholder="Option 3" />
-                        <input type="text" name="iws_question_airs[${newIndex}][option3_id]" placeholder="Next Id"  class ="next_question_id"/>
+                        <div class="option_flex_cls">
+                            <select name="iws_question_airs[${newIndex}][option2]">
+                                <option value="">Select Next Question</option>
+                                ${[...Array(newIndex)].map((_, i) => `<option value="${i}">Question ${i + 1}</option>`).join('')}
+                                <option value="NE">Not Eligible</option>
+                            </select>
+                        </div>
+                        <div class="option_flex_cls">
+                            <select name="iws_question_airs[${newIndex}][option3]">
+                                <option value="">Select Next Question</option>
+                                ${[...Array(newIndex)].map((_, i) => `<option value="${i}">Question ${i + 1}</option>`).join('')}
+                                <option value="NE">Not Eligible</option>
+                            </select>
                         </div>
                     </div>
                 </div>
             `;
             repeater.insertAdjacentHTML('beforeend', newItem);
         });
+
         document.addEventListener('click', function(e) {
             if (e.target && e.target.classList.contains('remove-question')) {
                 e.target.parentElement.parentElement.remove();
@@ -163,14 +188,12 @@ function iws_question_airs_field_callback() {
             padding: 25px 20px 25px 20px;
             background-color: #b2a9a926;
         }
-
         .question-container {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 5px; 
         }
-
         .options-container input {
             display: block; 
             margin-bottom: 5px; 
@@ -207,93 +230,94 @@ function iws_question_airs_field_callback() {
     <?php
 }
 
+
 function iws_display_questions() {
-  
     $questions = get_option('iws_question_airs', array());
-    ob_start(); 
-       
+    ob_start();
+
     if (!empty($questions)) {
-             
-         if ( is_user_logged_in() ) {
+
+        if (is_user_logged_in()) {
             $current_user = wp_get_current_user();
-            echo  '<form>' ;
-       echo '<div style ="padding:5px"><h2>Welcome, ' . esc_html( $current_user->user_login ) . '!</h2></div>'; 
-        foreach ($questions as $index => $question) {
-            $question_id = 'question' . ($index + 1); 
-            $options_id = 'options' . ($index + 1); 
-            $visible_class = ($index === 0) ? 'visible' : '';
+            echo '<form>';
+            echo '<div class = "welcome_message_user"style="padding:5px"><h2>Welcome, ' . esc_html($current_user->user_login) . '!</h2></div>';
 
-            ?>
-              
-            <div id="<?php echo esc_attr($question_id); ?>" class="question <?php echo esc_attr($visible_class); ?>">
-            <p><?php echo esc_html($question['question']); ?></p>
-               
-                <button class="radio-button" onclick="showAnswer(event ,'<?php echo esc_attr($question['option1_id']); ?>')" id ='<?php echo esc_attr($options_id); ?>'>
-                    <?php echo esc_html($question['option1']); ?>
-                </button>
-                <button class="radio-button" onclick="showAnswer(event ,'<?php echo esc_attr($question['option2_id']); ?>')" id ='<?php echo esc_attr($options_id); ?>'>
-                    <?php echo esc_html($question['option2']); ?>
-                </button>
-                <button class="radio-button" onclick="showAnswer(event ,'<?php echo esc_attr($question['option3_id']); ?>')" id ='<?php echo esc_attr($options_id); ?>'>
-                    <?php echo esc_html($question['option3']); ?>
-                </button>
-              
-            </div>
-            <?php   
+            foreach ($questions as $index => $question) {
+                $question_id = 'question' . ($index + 1);
+                $options_id = 'options' . ($index + 1);
+                $visible_class = ($index === 0) ? 'visible' : '';
+                $option_one = is_numeric($question['option1_id']) ? $question['option1_id'] + 1 : 'NE';
+                $option_two = is_numeric($question['option2_id']) ? $question['option2_id'] + 1 : 'NE';
+                $option_three = is_numeric($question['option3_id']) ? $question['option3_id'] + 1 : 'NE';
+
+                ?>
+
+                <div id="<?php echo esc_attr($question_id); ?>" class="question <?php echo esc_attr($visible_class); ?>">
+                    <p><?php echo esc_html($question['question']); ?></p>
+
+                    <button class="radio-button"
+                            onclick="showAnswer(event, '<?php echo ($option_one == 'NE') ? 'NE' : $option_one; ?>')"
+                            id='<?php echo esc_html($question['option1']); ?>'>
+                          
+                        <?php echo esc_html($question['option1']); ?>
+                    </button>
+
+                    <button class="radio-button"
+                            onclick="showAnswer(event, '<?php echo ($option_two == 'NE') ? 'NE' : $option_two; ?>')"
+                            id='<?php echo esc_html($question['option2']); ?>'>
+                        <?php echo esc_html($question['option2']); ?>
+                    </button>
+
+                    <button class="radio-button"
+                            onclick="showAnswer(event, '<?php echo ($option_three == 'NE') ? 'NE' : $option_three; ?>')"
+                            id='<?php echo esc_html($question['option3']); ?>'>
+                        <?php echo esc_html($question['option3']); ?>
+                    </button>
+                    <?php
+                    ?>
+                </div>
+                <?php
+            }
+
+            echo '<div id="thank-you-message" class="thank_you_after_questions" style="display:none;">
+                    <h2>Thank you for completing the questions!</h2>
+                  </div>';
+
+            echo '<div id="not-eligible-message" class="not_eligible_message" style="display:none;">
+                  <h2>Sorry, you are not eligible for this package!</h2>
+                    </div>
+                    ';
+
+            echo '</form>';
+        } else {
+            $current_url = esc_url(home_url(add_query_arg(null, null)));
+            echo '<div class="login_register_first" style="padding:5px">
+                    <h2>Welcome, please Login/signup for the questionnaire!</h2>
+                    <a href="' . wp_login_url($current_url) . '" style="font-size: 24px; font-weight: 600;">
+                    Click here to login</a>
+                  </div>';
         }
-        echo  '</form>' ;
-    }
-     else {
-        echo '<div style ="padding:5px"><h2>Welcome, visitor please signup for the question air! </div>';
-    } 
     }
 
-    return ob_get_clean(); 
+    return ob_get_clean();
 }
+
 add_shortcode('iws_display_questions', 'iws_display_questions');
-
-function iws_admin_styles() {
-    echo '<style>
-        .wrap h1 {
-            margin-bottom: 20px;
-        }
-        .widefat {
-            margin-bottom: 20px;
-            border-collapse: collapse;
-        }
-        .widefat th, .widefat td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-        .widefat th {
-            background-color: #f1f1f1;
-        }
-    </style>';
-}
-add_action('admin_head', 'iws_admin_styles');
-
-function iws_admin_menu() {
-    add_menu_page(
-        'Question and Answers',
-        'Questions',
-        'manage_options',
-        'question-airs-answers',
-        'iws_display_questions_in_admin',
-        'dashicons-format-chat',
-        20
-    );
-}
-add_action('admin_menu', 'iws_admin_menu');
 
 
 function iws_display_questions_in_admin() {
-    $data = get_option('question_answers', []); 
+    $data = get_option('question_answers', []);
+
     if (isset($_POST['delete_question']) && check_admin_referer('iws_delete_question_nonce')) {
         $question_to_delete = sanitize_text_field($_POST['delete_question']);
-        if (array_key_exists($question_to_delete, $data)) {
-            unset($data[$question_to_delete]); 
-            update_option('question_answers', $data);
+        
+        foreach ($data as $key => $entry) {
+            if ($entry['question'] === $question_to_delete) {
+                unset($data[$key]);
+                break;
+            }
         }
+        update_option('question_answers', array_values($data)); 
     }
     ?>
     <div class="widefat">
@@ -302,20 +326,45 @@ function iws_display_questions_in_admin() {
             <table class="form-table">
                 <thead>
                     <tr>
-                        <th>Question</th>
-                        <th>Selected Answer</th>
+                        <th>Username</th>
+                        <th>View</th>
+                        <th>Eligibilty</th>
                         <th>Delete</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($data as $question => $answer): ?>
+                    <?php 
+                   
+                    $grouped_data = [];
+                    foreach ($data as $entry) {
+                        $grouped_data[$entry['username']][] = $entry;
+                    }
+
+                    foreach ($grouped_data as $username => $entries): ?>
                         <tr>
-                            <td><?php echo esc_html($question); ?></td>
-                            <td><?php echo esc_html($answer); ?></td>
+                            <td><?php echo esc_html($username); ?></td>
+                            <td>
+                                <button class="view-questions-button" data-username="<?php echo esc_attr($username); ?>">View</button>
+                            </td>
+                            <td>
+
+                            <?php
+                                
+                                $eligible = true; 
+                                foreach ($entries as $entry) {
+                                    if ($entry['answer'] === 'NE') {
+                                        $eligible = false; 
+                                        break;
+                                    }
+                                }
+                                echo $eligible ? 'Eligible' : 'Not Eligible';
+                                ?>
+                                
+                            </td>
                             <td>
                                 <form method="post">
                                     <?php wp_nonce_field('iws_delete_question_nonce'); ?>
-                                    <input type="hidden" name="delete_question" value="<?php echo esc_attr($question); ?>" />
+                                    <input type="hidden" name="delete_question" value="<?php echo esc_attr($entries[0]['question']); ?>" />
                                     <input type="submit" value="Delete" class="button button-danger" />
                                 </form>
                             </td>
@@ -323,6 +372,14 @@ function iws_display_questions_in_admin() {
                     <?php endforeach; ?>
                 </tbody>
             </table>
+
+            <div id="question-modal" style="display:none;">
+                <div class="modal-content">
+                    <h2>User Questions and Answers</h2>
+                    <div id="question-modal-content"></div>
+                    <button id="close-modal">Close</button>
+                </div>
+            </div>
         <?php else: ?>
             <p>No questions answered yet.</p>
         <?php endif; ?>
@@ -331,9 +388,6 @@ function iws_display_questions_in_admin() {
 }
 function iws_admin_styles_questions() {
     echo '<style>
-    .wrap h1 {
-        margin-bottom: 20px;
-    }
     .widefat {
         margin-bottom: 20px;
         border-collapse: collapse;
@@ -345,9 +399,87 @@ function iws_admin_styles_questions() {
     .widefat th {
         background-color: #f1f1f1;
     }
-</style>';
+    #question-modal {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    </style>';
 }
 add_action('admin_head', 'iws_admin_styles_questions');
+
+
+
+add_action('wp_ajax_iws_fetch_user_questions', 'iws_fetch_user_questions_callback');
+
+function iws_fetch_user_questions_callback() {
+    if (isset($_POST['username'])) {
+        $username = sanitize_text_field($_POST['username']);
+        $data = get_option('question_answers', []);
+        
+        // Filter questions for the specified user
+        $user_questions = array_filter($data, function($entry) use ($username) {
+            return $entry['username'] === $username;
+        });
+
+        if (!empty($user_questions)) {
+            $response = '';
+            foreach ($user_questions as $question) {
+                $response .= '<p><strong>Question:</strong> ' . esc_html($question['question']) . '<br>';
+                $response .= '<strong>Answer:</strong> ' . esc_html($question['answer']) . '</p>';
+            }
+            wp_send_json_success($response);
+        } else {
+            wp_send_json_error('No questions found for this user.');
+        }
+    } else {
+        wp_send_json_error('Invalid username.');
+    }
+}
+
+
+
+function iws_admin_scripts() {
+    ?>
+    <script type="text/javascript">
+    jQuery(document).ready(function($) {
+        $('.view-questions-button').click(function() {
+            var username = $(this).data('username');
+            
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'iws_fetch_user_questions',
+                    username: username
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#question-modal-content').html(response.data);
+                        $('#question-modal').show();
+                    } else {
+                        alert(response.data);
+                    }
+                }
+            });
+        });
+
+        $('#close-modal').click(function() {
+            $('#question-modal').hide();
+        });
+    });
+    </script>
+    <?php
+}
+add_action('admin_footer', 'iws_admin_scripts');
+
+
+
+
 
 add_action('wp_ajax_save_question_answer', 'save_question_answer_callback');
 add_action('wp_ajax_nopriv_save_question_answer', 'save_question_answer_callback');
@@ -356,10 +488,16 @@ function save_question_answer_callback() {
     if (isset($_POST['question']) && isset($_POST['answer'])) {
         $question = sanitize_text_field($_POST['question']);
         $answer = sanitize_text_field($_POST['answer']);
+        $user = wp_get_current_user();
+        $username = is_user_logged_in() ? $user->user_login : 'Guest';
         $data = get_option('question_answers', []);
-        $data[$question] = $answer;
+        $data[] = [
+            'question' => $question,
+            'answer' => $answer,
+            'username' => $username,
+        ];
         update_option('question_answers', $data);
-        wp_send_json_success(['question' => $question, 'answer' => $answer]);
+        wp_send_json_success(['question' => $question, 'answer' => $answer, 'username' => $username]);
     } else {
         wp_send_json_error('Invalid data');
     }
