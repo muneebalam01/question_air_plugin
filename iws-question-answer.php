@@ -6,6 +6,7 @@ Description:  IWS Question Answer Plugin developed by TSP shortcode is iws_displ
 Version: 1.2
 Author: Tech Solution Pro
 Author URI: https://techsolutionspro.co.uk/
+Network: true
 */
 
 function iws_enqueue_scripts() {
@@ -240,12 +241,18 @@ function iws_display_questions() {
         if (is_user_logged_in()) {
             $current_user = wp_get_current_user();
             echo '<form>';
-            echo '<div class = "welcome_message_user"style="padding:5px"><h2>Welcome, ' . esc_html($current_user->user_login) . '!</h2></div>';
+            echo '<div class = "welcome_message_user"style="padding:5px;
+            /* border: 1px solid gray;
+             */border-radius: 5px;
+             margin-bottom: 40px;
+             box-shadow: 4px 6px 7px 10px rgba(8, 8, 4, 0.1);
+             width:650px"><h2>Welcome, ' . esc_html($current_user->user_login) . '!</h2></div>';
 
             foreach ($questions as $index => $question) {
                 $question_id = 'question' . ($index + 1);
                 $options_id = 'options' . ($index + 1);
                 $visible_class = ($index === 0) ? 'visible' : '';
+                
                 $option_one = is_numeric($question['option1_id']) ? $question['option1_id'] + 1 : 'NE';
                 $option_two = is_numeric($question['option2_id']) ? $question['option2_id'] + 1 : 'NE';
                 $option_three = is_numeric($question['option3_id']) ? $question['option3_id'] + 1 : 'NE';
@@ -502,10 +509,3 @@ function save_question_answer_callback() {
         wp_send_json_error('Invalid data');
     }
 }
-
-
-
-
-
-
-
