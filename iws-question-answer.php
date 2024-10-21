@@ -85,13 +85,13 @@ function iws_question_airs_field_callback() {
                     </div>
                     <div class="options-container">
                         <div class="option_flex_cls">
-                        <input type="text" name="iws_question_airs[<?php echo $index; ?>][option1]" value="<?php echo esc_attr($question['option1']); ?>" placeholder="Option 1" />
+                            <input type="text" name="iws_question_airs[<?php echo $index; ?>][option1]" value="<?php echo esc_attr($question['option1']); ?>" placeholder="Option 1" />
                             <select name="iws_question_airs[<?php echo $index; ?>][option1_id]" class="next_question_id">
                                 <option value="">Select Next Question</option>
                                 <?php foreach ($questions as $key => $q) : ?>
-                                    <?php if ($key !== $index) : // Skip current question ?>
-                                    <option value="<?php echo $key + 1; ?>" <?php selected($question['option1_id'], $key); ?>>
-                                        <?php echo esc_html($q['question']); // Display the question title ?>
+                                    <?php if ($key !== $index) : ?>
+                                    <option value="<?php echo $key; ?>" <?php selected($question['option1_id'], $key); ?>>
+                                        <?php echo esc_html($q['question']); ?>
                                     </option>
                                     <?php endif; ?>
                                 <?php endforeach; ?>
@@ -99,13 +99,13 @@ function iws_question_airs_field_callback() {
                             </select>
                         </div>
                         <div class="option_flex_cls">
-                        <input type="text" name="iws_question_airs[<?php echo $index; ?>][option2]" value="<?php echo esc_attr($question['option2']); ?>" placeholder="Option 2" />
+                            <input type="text" name="iws_question_airs[<?php echo $index; ?>][option2]" value="<?php echo esc_attr($question['option2']); ?>" placeholder="Option 2" />
                             <select name="iws_question_airs[<?php echo $index; ?>][option2_id]" class="next_question_id">
                                 <option value="">Select Next Question</option>
                                 <?php foreach ($questions as $key => $q) : ?>
-                                    <?php if ($key !== $index) : // Skip current question ?>
+                                    <?php if ($key !== $index) : ?>
                                     <option value="<?php echo $key; ?>" <?php selected($question['option2_id'], $key); ?>>
-                                        <?php echo esc_html($q['question']); // Display the question title ?>
+                                        <?php echo esc_html($q['question']); ?>
                                     </option>
                                     <?php endif; ?>
                                 <?php endforeach; ?>
@@ -113,13 +113,13 @@ function iws_question_airs_field_callback() {
                             </select>
                         </div>
                         <div class="option_flex_cls">
-                        <input type="text" name="iws_question_airs[<?php echo $index; ?>][option3]" value="<?php echo esc_attr($question['option3']); ?>" placeholder="Option 3" />
+                            <input type="text" name="iws_question_airs[<?php echo $index; ?>][option3]" value="<?php echo esc_attr($question['option3']); ?>" placeholder="Option 3" />
                             <select name="iws_question_airs[<?php echo $index; ?>][option3_id]" class="next_question_id">
                                 <option value="">Select Next Question</option>
                                 <?php foreach ($questions as $key => $q) : ?>
-                                    <?php if ($key !== $index) : // Skip current question ?>
+                                    <?php if ($key !== $index) : ?>
                                     <option value="<?php echo $key; ?>" <?php selected($question['option3_id'], $key); ?>>
-                                        <?php echo esc_html($q['question']); // Display the question title ?>
+                                        <?php echo esc_html($q['question']); ?>
                                     </option>
                                     <?php endif; ?>
                                 <?php endforeach; ?>
@@ -219,10 +219,10 @@ function iws_question_airs_field_callback() {
             border-radius: 5px;
         }
         input.next_question_id {
-        width: 15%;
-       }
-       .option_flex_cls {
-        display: flex;
+            width: 15%;
+        }
+        .option_flex_cls {
+            display: flex;
         }
         .option_1{
             display: flex;
@@ -230,6 +230,7 @@ function iws_question_airs_field_callback() {
     </style>
     <?php
 }
+
 
 
 function iws_display_questions() {
@@ -428,7 +429,7 @@ function iws_fetch_user_questions_callback() {
         $username = sanitize_text_field($_POST['username']);
         $data = get_option('question_answers', []);
         
-        // Filter questions for the specified user
+    
         $user_questions = array_filter($data, function($entry) use ($username) {
             return $entry['username'] === $username;
         });
@@ -508,4 +509,64 @@ function save_question_answer_callback() {
     } else {
         wp_send_json_error('Invalid data');
     }
+}
+
+
+
+// Register the REST API routes
+function iws_register_api_routes() {
+    register_rest_route('iws/v1', '/questions', array(
+        'methods' => 'GET',
+        'callback' => 'iws_get_questions',
+        'permission_callback' => '__return_true',
+    ));
+
+    register_rest_route('iws/v1', '/submit-answers', array(
+        'methods' => 'POST',
+        'callback' => 'iws_submit_answers',
+        'permission_callback' => '__return_true',
+    ));
+}
+add_action('rest_api_init', 'iws_register_api_routes');
+
+
+
+// Function to get questions
+function iws_get_questions() {
+    $questions = get_option('iws_question_airs', array());
+
+    if (empty($questions)) {
+        return new WP_Error('no_questions', 'No questions available', array('status' => 404));
+    }
+
+    // Return questions in the API response
+    return rest_ensure_response($questions);
+}
+
+
+// Function to submit answers
+function iws_submit_answers(WP_REST_Request $request) {
+    $params = $request->get_json_params();
+
+    if (!isset($params['username']) || !isset($params['answers'])) {
+        return new WP_Error('missing_data', 'Username or answers missing', array('status' => 400));
+    }
+
+    // Save answers to the 'question_answers' option
+    $data = get_option('question_answers', []);
+    $username = sanitize_text_field($params['username']);
+    $answers = $params['answers'];
+
+    // Append answers to the data
+    foreach ($answers as $answer) {
+        $data[] = [
+            'username' => $username,
+            'question' => sanitize_text_field($answer['question']),
+            'answer' => sanitize_text_field($answer['answer']),
+        ];
+    }
+
+    update_option('question_answers', $data);
+
+    return rest_ensure_response(['message' => 'Answers submitted successfully']);
 }

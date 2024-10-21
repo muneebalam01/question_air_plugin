@@ -99,6 +99,7 @@ button:hover {
 
 
  .not_eligible_message{
+    width: 650px;
     background-color: #f10e0e9c;
     padding: 20px;
     border-radius: 5px;
@@ -110,6 +111,7 @@ button:hover {
     color: #fff;
     font-weight: 800;
     padding: 0px 20px 0px 20px;
+    text-transform: capitalize;
  }
 
 
