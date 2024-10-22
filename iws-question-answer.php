@@ -10,10 +10,20 @@ Network: true
 */
 
 function iws_enqueue_scripts() {
+    // Enqueue your custom CSS
     wp_enqueue_style('uk-trivia-game-style', plugin_dir_url(__FILE__) . 'style.css');
-    wp_enqueue_script('uk-trivia-game-script', plugin_dir_url(__FILE__) . 'script.js', array(), null, true);
-    wp_localize_script('uk-trivia-game-script', 'ajaxurl', admin_url('admin-ajax.php'));
+    
+    // Enqueue your custom JavaScript
+    wp_enqueue_script('uk-trivia-game-script', plugin_dir_url(__FILE__) . 'script.js', array('jquery'), null, true);
+    
+    // Localize script to pass the ajax URL and nonce
+    wp_localize_script('uk-trivia-game-script', 'iws_ajax_object', array(
+        'ajax_url' => admin_url('admin-ajax.php'), // AJAX URL
+        'nonce'    => wp_create_nonce('iws_ajax_nonce') // Security nonce for verification
+    ));
 }
+add_action('wp_enqueue_scripts', 'iws_enqueue_scripts');
+
 add_action('wp_enqueue_scripts', 'iws_enqueue_scripts');
 function iws_add_question_airs_menu() {
     
@@ -336,50 +346,53 @@ function iws_display_questions_in_admin() {
                     <tr>
                         <th>Username</th>
                         <th>View</th>
-                        <th>Eligibilty</th>
+                        <th>Eligibility</th>
                         <th>Delete</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php 
-                   
-                    $grouped_data = [];
-                    foreach ($data as $entry) {
-                        $grouped_data[$entry['username']][] = $entry;
-                    }
+    <?php 
+    $grouped_data = [];
+    foreach ($data as $entry) {
+        $grouped_data[$entry['username']][] = $entry;
+    }
 
-                    foreach ($grouped_data as $username => $entries): ?>
-                        <tr>
-                            <td><?php echo esc_html($username); ?></td>
-                            <td>
-                                <button class="view-questions-button" data-username="<?php echo esc_attr($username); ?>">View</button>
-                            </td>
-                            <td>
+    foreach ($grouped_data as $username => $entries): ?>
+        <tr>
+            <td><?php echo esc_html($username); ?></td>
+            <?php 
+            $isNotEligible = false; 
+            foreach ($entries as $entry) {
+                if (esc_html($entry['answer']) === 'Not Eligible') {
+                    $isNotEligible = true; 
+                    break; 
+                }
+            } ?>
+            <td>
+                <button class="view-questions-button <?php echo $isNotEligible ? 'not-eligible' : 'eligible'; ?>" data-username="<?php echo esc_attr($username); ?>">
+                    View
+                </button>
+            </td>
+            <td>
+                <?php 
+                if ($isNotEligible) {
+                    echo 'Not Eligible'; 
+                } else {
+                    echo 'Eligible'; 
+                }
+                ?>
+            </td>
+            <td>
+                <form method="post">
+                    <?php wp_nonce_field('iws_delete_question_nonce'); ?>
+                    <input type="hidden" name="delete_question" value="<?php echo esc_attr($entries[0]['question']); ?>" />
+                    <input type="submit" value="Delete" class="button button-danger" />
+                </form>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+</tbody>
 
-                            <?php
-                                
-                                $eligible = true; 
-                                foreach ($entries as $entry) {
-                                    if ($entry['answer'] === 'NE') {
-                                        $eligible = false; 
-                                        break;
-                                    }
-                                }
-                                echo $eligible ? 'Eligible' : 'Not Eligible';
-                                ?>
-                                
-                            </td>
-                            <td>
-                                <form method="post">
-                                    <?php wp_nonce_field('iws_delete_question_nonce'); ?>
-                                    <input type="hidden" name="delete_question" value="<?php echo esc_attr($entries[0]['question']); ?>" />
-                                    <input type="submit" value="Delete" class="button button-danger" />
-                                </form>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
 
             <div id="question-modal" style="display:none;">
                 <div class="modal-content">
@@ -394,6 +407,8 @@ function iws_display_questions_in_admin() {
     </div>
     <?php
 }
+
+
 function iws_admin_styles_questions() {
     echo '<style>
     .widefat {
@@ -416,6 +431,17 @@ function iws_admin_styles_questions() {
         padding: 20px;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
+
+    
+button.view-questions-button.not-eligible {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.6;
+    border: none;
+}
+
     </style>';
 }
 add_action('admin_head', 'iws_admin_styles_questions');
@@ -439,6 +465,7 @@ function iws_fetch_user_questions_callback() {
             foreach ($user_questions as $question) {
                 $response .= '<p><strong>Question:</strong> ' . esc_html($question['question']) . '<br>';
                 $response .= '<strong>Answer:</strong> ' . esc_html($question['answer']) . '</p>';
+                
             }
             wp_send_json_success($response);
         } else {
@@ -493,11 +520,20 @@ add_action('wp_ajax_save_question_answer', 'save_question_answer_callback');
 add_action('wp_ajax_nopriv_save_question_answer', 'save_question_answer_callback');
 
 function save_question_answer_callback() {
+    // Check nonce for security
+    if (!isset($_POST['_ajax_nonce']) || !wp_verify_nonce($_POST['_ajax_nonce'], 'iws_ajax_nonce')) {
+        wp_send_json_error('Invalid nonce.');
+        return;
+    }
+
+    
     if (isset($_POST['question']) && isset($_POST['answer'])) {
         $question = sanitize_text_field($_POST['question']);
         $answer = sanitize_text_field($_POST['answer']);
         $user = wp_get_current_user();
         $username = is_user_logged_in() ? $user->user_login : 'Guest';
+
+        // Store the question and answer
         $data = get_option('question_answers', []);
         $data[] = [
             'question' => $question,
@@ -505,15 +541,18 @@ function save_question_answer_callback() {
             'username' => $username,
         ];
         update_option('question_answers', $data);
+
+        // Send a successful JSON response
         wp_send_json_success(['question' => $question, 'answer' => $answer, 'username' => $username]);
     } else {
-        wp_send_json_error('Invalid data');
+        wp_send_json_error('Invalid data.');
     }
 }
 
 
 
-// Register the REST API routes
+add_action('rest_api_init', 'iws_register_api_routes');
+
 function iws_register_api_routes() {
     register_rest_route('iws/v1', '/questions', array(
         'methods' => 'GET',
@@ -527,7 +566,7 @@ function iws_register_api_routes() {
         'permission_callback' => '__return_true',
     ));
 }
-add_action('rest_api_init', 'iws_register_api_routes');
+
 
 
 
@@ -547,7 +586,10 @@ function iws_get_questions() {
 // Function to submit answers
 function iws_submit_answers(WP_REST_Request $request) {
     $params = $request->get_json_params();
-
+    
+    // Debug: Log received params
+    error_log(print_r($params, true));
+    
     if (!isset($params['username']) || !isset($params['answers'])) {
         return new WP_Error('missing_data', 'Username or answers missing', array('status' => 400));
     }

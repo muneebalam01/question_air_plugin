@@ -4,9 +4,13 @@ function showAnswer(event, optionId) {
     event.preventDefault();
     questionCount++;
 
+    const questionElement = event.target.closest('.question');
+    const questionText = questionElement.querySelector('p').textContent.trim();
+    const selectedAnswerText = optionId === 'NE' ? "Not Eligible" : event.target.textContent.trim();
+
     // Handle "Not Eligible" selection
     if (optionId === 'NE') {
-        handleNotEligible();
+        handleNotEligible(questionText, selectedAnswerText);
         return; // Stop further processing for not eligible users
     }
 
@@ -17,10 +21,10 @@ function showAnswer(event, optionId) {
     }
 
     // Handle normal question navigation
-    handleQuestionSelection(event, optionId);
+    handleQuestionSelection(event, optionId, questionText, selectedAnswerText);
 }
 
-function handleNotEligible() {
+function handleNotEligible(questionText, selectedAnswerText) {
     // Hide all questions
     const allQuestions = document.querySelectorAll('.question');
     allQuestions.forEach(q => q.classList.remove('visible'));
@@ -29,11 +33,9 @@ function handleNotEligible() {
     document.getElementById('not-eligible-message').style.display = 'block';
 
     // Log for debugging
-    console.log('User marked as not eligible');
+    console.log(`${questionText}: ${selectedAnswerText}`);
 
-    // Save "Not Eligible" answer to the database
-    const questionText = "Eligibility"; // You might want to use a proper question here
-    const selectedAnswerText = "Not Eligible";
+    // Save the question and "Not Eligible" answer to the database
     saveAnswer(questionText, selectedAnswerText);
 }
 
@@ -47,7 +49,7 @@ function handleMaxQuestionsReached() {
     document.getElementById('thank-you-message').style.display = 'block';
 }
 
-function handleQuestionSelection(event, optionId) {
+function handleQuestionSelection(event, optionId, questionText, selectedAnswerText) {
     // Deselect previous answer buttons
     const buttons = document.querySelectorAll('.radio-button');
     buttons.forEach(btn => btn.classList.remove('selected'));
@@ -64,28 +66,25 @@ function handleQuestionSelection(event, optionId) {
         nextQuestion.classList.add('visible');
     }
 
-    // Get the question and selected answer text
-    const questionText = event.target.closest('.question').querySelector('p').textContent.trim();
-    const selectedAnswerText = event.target.textContent.trim();
-
     // Log for debugging
-    console.log("Question: " + questionText);
-    console.log("Selected answer text is: " + selectedAnswerText);
+    console.log(`Question: ${questionText}`);
+    console.log(`Selected answer: ${selectedAnswerText}`);
 
-    // Save the selected answer to the database
+    // Save the question and selected answer to the database
     saveAnswer(questionText, selectedAnswerText);
 }
 
 function saveAnswer(question, answer) {
-    fetch(ajaxurl, { 
+    fetch(iws_ajax_object.ajax_url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-            action: 'save_question_answer', 
+            action: 'save_question_answer',
             question: question,
             answer: answer,
+            _ajax_nonce: iws_ajax_object.nonce // Security nonce
         }),
     })
     .then(response => response.json())
@@ -105,4 +104,36 @@ function showFinalAnswer(finalAnswerId) {
         question.classList.remove('visible');
     });
     document.getElementById(`answer${finalAnswerId}`).style.display = 'block';
+}
+
+
+
+
+
+
+
+
+function submitAnswers(username, answers) {
+    fetch('https://your-site.com/wp-json/iws/v1/submit-answers', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            username: username,
+            answers: answers
+        }),
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Success:', data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
 }
